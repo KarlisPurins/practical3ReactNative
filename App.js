@@ -1,8 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState} from 'react';
 import MapView from 'react-native-maps';
+import Marker from 'react-native-maps';
 import { Alert, ActivityIndicator, FlatList, StyleSheet, Text, View, Dimensions } from 'react-native';
-import Button from './components/showWeatherButton';
 import * as Location from 'expo-location';
 
 export default function App (){
@@ -16,6 +16,9 @@ export default function App (){
   const [humidity, setHumidity] = useState(null);
   const [description, setDescription] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
 
   function temperatureConverter(valNum) {
   valNum = parseFloat(valNum);
@@ -32,24 +35,14 @@ export default function App (){
       setTemperature(temperatureConverter(json.main.temp).toFixed(2));
       setPressure(json.main.pressure);
       setHumidity(json.main.humidity);
+      setLatitude(json.coord.lat);
+      setLongitude(json.coord.lon);
+      setDescription(json.weather['0'].description);
       return json;
     } catch (error) {
       console.error(error);
     }
   };
-
-  const getWeatherData = (lat, lon) => {
-  return fetch('https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lon+'&appid=26522379884692fd13fb1ddaacf8975c&lang=la')
-    .then((response) => response.json())
-    .then((json) => {
-      console.log(json.weather['0'].description);
-      setDescription(json.weather['0'].description);
-      return json.weather.description;
-    })
-    .catch((error) => {
-      console.error(error);
-    });
-};
 
   useEffect(() => {
     (async () => {
@@ -67,59 +60,54 @@ export default function App (){
       if (errorMsg) {
         text = errorMsg;
       } else if (location) {
-        text = JSON.stringify(location);
-        var timestampJSON = location['timestamp'];
         var latitudeJSON = location.coords.latitude;
         var longitudeJSON = location.coords.longitude;
         getPlaceData(latitudeJSON, longitudeJSON);
-        getWeatherData(latitudeJSON, longitudeJSON);
-      }
 
+      }
   return (
     <View style={styles.containerView}>
-      <MapView style={styles.map} />
-      <View style={styles.containerButton}>
-        <View style={styles.containerText}>
+      <MapView initialRegion={{
+                latitude: latitudeJSON,
+                longitude: longitudeJSON,
+                latitudeDelta: 0.1,
+                longitudeDelta: 0.1,
+              }}
+                style={styles.map}/>
+          <View style={styles.containerText}>
             <Text style={styles.text}>Place: {place}, {country}</Text>
-            <Text style={styles.text}>Latitude: {latitudeJSON}</Text>
-            <Text style={styles.text}>Longitude: {longitudeJSON}</Text>
-            <Text style={styles.text}>Temp: {temperature} °C</Text>
-            <Text style={styles.text}>Pressure: {pressure}</Text>
-            <Text style={styles.text}>Humidity: {humidity}</Text>
+            <Text style={styles.text}>Latitude: {latitude}</Text>
+            <Text style={styles.text}>Longitude: {longitude}</Text>
+            <Text style={styles.text}>Temp: {temperature}°C</Text>
+            <Text style={styles.text}>Pressure: {pressure} hPa</Text>
+            <Text style={styles.text}>Humidity: {humidity}%</Text>
             <Text style={styles.text}>Description: {description}</Text>     
-        </View>
-         <Button />
-      </View>
+          </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   containerView: {
-    position: 'absolute',
     flex: 1,
-    backgroundColor: '#fff',
+    position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  map: {
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').height,
   },
-  containerButton: {
-    position: 'absolute',
-    right: '10%',
-    bottom: '10%',
-  },
-  text: {
-    fontSize: 17
-  },
   containerText: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    left: '3%',
-    bottom: '30%',
+    position: 'absolute',
+    bottom: '10%',
+    backgroundColor: '#fff'
+  },
+  map: {
+    flex: 1,
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+  },
+  text: {
+    fontSize: 19
   }
 });
