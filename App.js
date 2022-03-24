@@ -27,40 +27,29 @@ export default function App (){
     try {
       const response = await fetch(linkAPI);
       const json = await response.json();
-      console.log(json.name);
       setPlace(json.name);
       setCountry(json.sys.country);
       setTemperature(temperatureConverter(json.main.temp).toFixed(2));
       setPressure(json.main.pressure);
       setHumidity(json.main.humidity);
-      console.log(json.weather);
-      setDescription(json.weather.description)
       return json;
     } catch (error) {
       console.error(error);
     }
   };
 
-  /*const getWeatherData = () => {
-    try {
-      fetch('https://reactnative.dev/movies.json')
-      .then(response => response.json())
-      .then(data => setData(data.movies));
-    } catch (error) {
+  const getWeatherData = (lat, lon) => {
+  return fetch('https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lon+'&appid=26522379884692fd13fb1ddaacf8975c&lang=la')
+    .then((response) => response.json())
+    .then((json) => {
+      console.log(json.weather['0'].description);
+      setDescription(json.weather['0'].description);
+      return json.weather.description;
+    })
+    .catch((error) => {
       console.error(error);
-    } 
-  }*/
-
-  /*const getWeatherData = async () => {
-    linkAPI = 'https://reactnative.dev/movies.json';
-    try {
-      const response = await fetch(linkAPI);
-      const json = await response.json();
-      return json.movies;
-    } catch (error) {
-      console.error(error);
-    }
-  };*/
+    });
+};
 
   useEffect(() => {
     (async () => {
@@ -82,16 +71,15 @@ export default function App (){
         var timestampJSON = location['timestamp'];
         var latitudeJSON = location.coords.latitude;
         var longitudeJSON = location.coords.longitude;
-
-        var placeJSON = getPlaceData(latitudeJSON, longitudeJSON);
-        
+        getPlaceData(latitudeJSON, longitudeJSON);
+        getWeatherData(latitudeJSON, longitudeJSON);
       }
 
   return (
     <View style={styles.containerView}>
       <MapView style={styles.map} />
       <View style={styles.containerButton}>
-        <View style={styles.containerButton}>
+        <View style={styles.containerText}>
             <Text style={styles.text}>Place: {place}, {country}</Text>
             <Text style={styles.text}>Latitude: {latitudeJSON}</Text>
             <Text style={styles.text}>Longitude: {longitudeJSON}</Text>
@@ -99,8 +87,8 @@ export default function App (){
             <Text style={styles.text}>Pressure: {pressure}</Text>
             <Text style={styles.text}>Humidity: {humidity}</Text>
             <Text style={styles.text}>Description: {description}</Text>     
-        <Button />
         </View>
+         <Button />
       </View>
     </View>
   );
@@ -120,11 +108,18 @@ const styles = StyleSheet.create({
   },
   containerButton: {
     position: 'absolute',
-    backgroundColor: '#fff',
-    right: '0%',
-    bottom: '0%',
+    right: '10%',
+    bottom: '10%',
   },
   text: {
     fontSize: 17
+  },
+  containerText: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    left: '3%',
+    bottom: '30%',
   }
 });
