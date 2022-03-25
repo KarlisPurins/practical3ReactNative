@@ -2,7 +2,8 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState} from 'react';
 import MapView from 'react-native-maps';
 import Marker from 'react-native-maps';
-import { Alert, ActivityIndicator, FlatList, StyleSheet, Text, View, Dimensions } from 'react-native';
+import Callout from 'react-native-maps';
+import { ActivityIndicator, StyleSheet, Text, View, Dimensions } from 'react-native';
 import * as Location from 'expo-location';
 
 export default function App (){
@@ -35,54 +36,62 @@ export default function App (){
       setTemperature(temperatureConverter(json.main.temp).toFixed(2));
       setPressure(json.main.pressure);
       setHumidity(json.main.humidity);
-      setLatitude(json.coord.lat);
-      setLongitude(json.coord.lon);
       setDescription(json.weather['0'].description);
       return json;
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    (async () => {
-          let { status } = await Location.requestForegroundPermissionsAsync();
+  const getCurrentLocation = async () => {
+     let { status } = await Location.requestForegroundPermissionsAsync();
           if (status !== 'granted') {
             setErrorMsg('Permission to access location was denied');
             return;
           }
           let location = await Location.getCurrentPositionAsync({});
           setLocation(location);
-        })();
-      }, []);
-
+          setLatitude(location.coords.latitude);
+          setLongitude(location.coords.longitude);
       var text = 'Waiting..';
       if (errorMsg) {
         text = errorMsg;
-      } else if (location) {
-        var latitudeJSON = location.coords.latitude;
-        var longitudeJSON = location.coords.longitude;
-        getPlaceData(latitudeJSON, longitudeJSON);
-
       }
+  }
+
+  useEffect(() => {
+    getCurrentLocation();
+      }, []);
+
+    getPlaceData(latitude, longitude);
+
   return (
     <View style={styles.containerView}>
+    {isLoading ? <ActivityIndicator/> : (
       <MapView initialRegion={{
-                latitude: latitudeJSON,
-                longitude: longitudeJSON,
+                latitude: latitude,
+                longitude: longitude,
                 latitudeDelta: 0.1,
                 longitudeDelta: 0.1,
               }}
-                style={styles.map}/>
-          <View style={styles.containerText}>
-            <Text style={styles.text}>Place: {place}, {country}</Text>
-            <Text style={styles.text}>Latitude: {latitude}</Text>
-            <Text style={styles.text}>Longitude: {longitude}</Text>
-            <Text style={styles.text}>Temp: {temperature}°C</Text>
-            <Text style={styles.text}>Pressure: {pressure} hPa</Text>
-            <Text style={styles.text}>Humidity: {humidity}%</Text>
-            <Text style={styles.text}>Description: {description}</Text>     
-          </View>
+                style={styles.map}>
+                <MapView.Marker style={styles.map} title={place+', '+country} coordinate={{ latitude : latitude , longitude : longitude }} pinColor={'#00BFFF'}>
+                <MapView.Callout>
+                  <View style={{height: 200, width: 250}}>
+                    <Text style={styles.text}>Place: {place}, {country}</Text>
+                    <Text style={styles.text}>Latitude: {latitude}</Text>
+                    <Text style={styles.text}>Longitude: {longitude}</Text>
+                    <Text style={styles.text}>Temp: {temperature}°C</Text>
+                    <Text style={styles.text}>Pressure: {pressure} hPa</Text>
+                    <Text style={styles.text}>Humidity: {humidity}%</Text>
+                    <Text style={styles.text}>Description: {description}</Text>
+                    </View>
+                </MapView.Callout>
+                </MapView.Marker>
+      </MapView>
+      )}
     </View>
   );
 }
@@ -93,19 +102,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
-  },
-  containerText: {
-    flex: 1,
-    position: 'absolute',
-    bottom: '10%',
-    backgroundColor: '#fff'
+    width: '100%',
+    height: '100%',
   },
   map: {
     flex: 1,
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
+    width: '100%',
+    height: '100%',
   },
   text: {
     fontSize: 19
