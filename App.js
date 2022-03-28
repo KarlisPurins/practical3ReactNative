@@ -27,7 +27,7 @@ export default function App() {
 
   const getPlaceData = async (lat, lon) => {
     var linkAPI =
-      'https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lon+'&appid=26522379884692fd13fb1ddaacf8975c&lang=la';
+      'https://api.openweathermap.org/data/2.5/weather?lat='+lat+'&lon='+lon+'&appid=YOUR_API&lang=la';
     try {
       const response = await fetch(linkAPI);
       const json = await response.json();
